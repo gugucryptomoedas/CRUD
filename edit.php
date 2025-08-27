@@ -1,148 +1,89 @@
 <?php
-$servername = "localhost";
-$username = "root";
-$password = "root";
-$database = "dt_crud";
 
-$connection = new mysqli($servername, $username, $password, $database);
+require_once 'conn.php';
 
-$id = "";
-$name = "";
-$email = "";
-$phone = "";
-$address = "";
+$id = isset($_GET['id']) ? $_GET['id'] : null;
 
-$errorMessage = "";
-$successMessage = "";
+if (!$id) {
+    echo "ID da tarefa não fornecida";
+    exit();
+}
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    if (!isset($_GET["id"])) {
-        header("location:index.php");
-        exit;
-    }
+try {
+    $sql = "SELECT * FROM crud_php WHERE id = ?";
+    $stmt = $conn->prepare($sql);
 
-    $id = $_GET["id"];
+    if ($stmt) {
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-    $sql = "SELECT * FROM clients WHERE id=$id";
-    $result = $connection->query($sql);
-    $row = $result->fetch_assoc();
-
-    if (!$row) {
-        header("location: index.php");
-        exit;
-    }
-    $name = $row["name"];
-    $email = $row["email"];
-    $phone = $row["phone"];
-    $address = $row["address"];
-} else {
-    $id = $_POST["id"];
-    $name = $_POST["name"];
-    $email = $_POST["email"];
-    $phone = $_POST["phone"];
-    $address = $_POST["address"];
-
-    do {
-        if (empty($name) || empty($email) || empty($phone) || empty($address)) {
-            $errorMessage = "All the fields are required";
-            break;
+        if ($result->num_rows == 1) {
+            $task = $result->fetch_assoc();
+        } else {
+            echo "Tarefa não encontrada!";
+            exit();
         }
-        $sql = "UPDATE clients " .
-            "SET name = '$name', email = '$email' , phone = '$phone', address = 'address'" . "WHERE id = $id";
-
-        $result = $connection->query($sql);
-
-        if (!$result) {
-            $errorMessage = "Invalid query: " . $connection->error;
-            break;
-        }
-        $successMessage = "Client added correctly!";
-
-        header("location: index.php");
-        exit;
-    } while (true);
+        $stmt->close();
+    } else {
+        throw new Exception("Erro ao preparar consulta" . $conn->error);
+    }
+} catch (Exception $e) {
+    echo "Erro" . $e->getMessage();
+    exit();
 }
 
 ?>
 
 <!DOCTYPE html>
-
 <html lang="pt-br">
-
+ 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My shop</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <title>Document</title>
+    <!-- BOOTSTRAP 4 -->
+    <link rel="stylesheet" href="https://bootswatch.com/4/yeti/bootstrap.min.css">
+    <!-- FONTMAWESOM -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
+        integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/"
+        crossorigin="anonymous">
 </head>
-
+ 
 <body>
-    <div class="container my-5">
-        <h2>New Client</h2>
-
-        <?php
-        if (!empty($errorMessage)) {
-            echo "<div class='alert alert-warning alert-dismissble fade show' role='alert'>
-            <strong>$errorMessage<?strong>
-            <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'>
-            </button>
+    <div class="container">
+        <nav class="navbar-light bg-light">
+            <div class="container">
+                <a class="navbar-brand" href="index.php">Crud PHP</a>
             </div>
-            ";
-        }
-        ?>
-
-        <form method="post">
-            <input type="hidden" name="id" value="<?php echo $id; ?>">
-            <div class="row mb-3">
-                <label class="col-sm-3 col-form-label">Name</label>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" name="name" value="<?php echo $name; ?>">
-                </div>
-            </div>
-            <div class="row mb-3">
-                <label class="col-sm-3 col-form-label">Email</label>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" name="email" value="<?php echo $email; ?>">
-                </div>
-            </div>
-            <div class="row mb-3">
-                <label class="col-sm-3 col-form-label">Phone</label>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" name="phone" value="<?php echo $phone; ?>">
-                </div>
-            </div>
-            <div class="row mb-3">
-                <label class="col-sm-3 col-form-label">Address</label>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" name="address" value="<?php echo $address; ?>">
-                </div>
-            </div>
-    </div>
-    <?php
-    if (!empty($successMessage)) {
-        echo "
-                <div class='row mb-3'>
-                    <div class='offset-sm-3 col-sm-6'>
-                        <div class='alert alert-warning alert-dissmissble fade show' role='alert'>
-                            <strong>$successMessage</strong>
-                                <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>
-                                </div>
+        </nav>
+ 
+        <div class="container p-4">
+            <div class="row">
+                <div class="col-md-6 mx-auto">
+                    <div class="card card-body">
+                        <form action="update.php" method="POST">
+                            <input type="hidden" name="id" value="<?php echo $task['id']; ?>">
+                            <div class="form-group">
+                                <input type="text" name="title" class="form-control" value="<?php echo $task['title']; ?>">
                             </div>
-                        </div>
-                        ";
-    }
-    ?>
-    <div class="row mb-3">
-        <div class="offset-sm-3 col-sm-3 d-grid">
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </div>
-        <div class="col-sm-3 d-grid">
-            <a class="btn btn-outline-primary" href="index.php" role="button">Cancel</a>
+                            <div class="form-group">
+                                <textarea name="description" rows="2" class="form-control"><?php echo $task['description']; ?></textarea>
+                            </div>
+                            <button class="btn btn-success btn-block" type="submit">Atualizar</button>
+                            <a href="index.php" class="btn btn-secondary btn-block">Cancelar</a>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    </form>
-    </div>
+ 
+    <!-- BOOSTRAP 4 SCRIPTS-->
+    <script src=" https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+ 
 </body>
-
+ 
 </html>

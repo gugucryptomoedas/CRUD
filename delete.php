@@ -1,20 +1,33 @@
 <?php
-if (isset($_GET["id"])) {
  
-    $id = $_GET["id"];
+require_once 'conn.php';
  
-    $servername = "localhost";
-    $username = "root";
-    $password = "root";
-    $database = "dt_crud";
+try {
+    if(isset($_GET['id'])){
+        $id = $_GET['id'];
  
+        $sql = "DELETE FROM crud_php WHERE id = ?";
+        $stmt = $conn->prepare($sql);
  
-    $connection = new mysqli($servername, $username, $password, $database);
+        if($stmt) {
+            $stmt->bind_param("i", $id);
+            if ($stmt->execute()) {
+                header("Location: index.php");
+                exit();
+            } else {
+                throw new Exception("Erro ao executar a exclusão: " .$stmt->error);
+            }
  
-    $sql = "DELETE FROM clients WHERE id=$id";
-    $connection->query($sql);
- 
-    header("location: index.php");
-    exit;
- 
+            $stmt->close();
+        } else {
+            throw new Exception("Erro ao preparar a consulta: " . $conn->error);
+        }
+    } else {
+        throw new Exception("ID da tarefa não fornecido.");
+    }
+} catch (Exception $e) {
+    echo "Erro: " . $e->getMessage();
+} finally {
+    $conn->close();
 }
+ 
